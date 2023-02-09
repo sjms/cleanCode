@@ -1,23 +1,29 @@
-package main
+package service
 
 import (
+	"errors"
 	"strconv"
 	"strings"
 )
 
-const DV1 int = 10
-const DV2 int = 11
+const (
+	DV1 int = 10
+	DV2 int = 11
+)
 
-func IsCPF(cpf string) bool {
+func IsCPF(cpf string) (bool, error) {
 	RemoveFormat(&cpf)
-	isValid := IsValidLength(cpf)
-	if !isValid {
-		return false
+	err := checkCPFIntegrity(cpf)
+	if err != nil {
+		return false, err
 	}
 	doc := RemoveCheckDigits(cpf)
 	doc += CalculateCheckDigit(doc, DV1)
 	doc += CalculateCheckDigit(doc, DV2)
-	return cpf == doc
+	if cpf == doc {
+		return true, nil
+	}
+	return false, errors.New("CPF inválido")
 }
 
 func CalculateCheckDigit(cpf string, index int) string {
@@ -39,6 +45,21 @@ func IsValidLength(cpf string) bool {
 		return true
 	}
 	return false
+}
+
+func HasRepeatedCharacters(cpf string) bool {
+	repeated := strings.Repeat(cpf[:1], 11)
+	return cpf == repeated
+}
+
+func checkCPFIntegrity(cpf string) error {
+	if !IsValidLength(cpf) {
+		return errors.New("o CPF possui tamanho inválido")
+	}
+	if HasRepeatedCharacters(cpf) {
+		return errors.New("um CPF não pode possuir caracteres repetidos")
+	}
+	return nil
 }
 
 func RemoveFormat(cpf *string) {
